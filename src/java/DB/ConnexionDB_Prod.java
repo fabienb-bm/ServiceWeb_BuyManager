@@ -1,3 +1,4 @@
+
 package DB;
 
 import java.sql.Connection;
@@ -13,17 +14,13 @@ import javax.naming.NamingException;
 import javax.sql.DataSource;
 
 /**
- * Nom de classe : ConnectionDB
- * <br>
- * Description : Classe permettant la connexion à la database.
- * <br>
- * Date de la dernière modification : 22/07/2014
- * 
- * @author Stagiaire (Florence Giraud)
+ *
+ * @author ThibaultLagarrigue
  */
-public class ConnexionDB 
-{
-    
+
+
+public class ConnexionDB_Prod {
+     
     /*************************
     * Attributs
     ************************/
@@ -48,9 +45,26 @@ public class ConnexionDB
         //on vérifie que la connexion n'est pas dejà chargée
         // => la connexion ne doit pas etre nul, elle doit 
         if (connexion == null || connexion.isClosed() || !connexion.isValid(1000)){
+            //
+            //Appel du pilote de la base de données
+            try {
+                javax.naming.Context initContext ;
+//                //
+                initContext = new InitialContext();
+//                //
+//                // initialisation de ce contexte
+                javax.naming.Context envContext  = (javax.naming.Context)initContext.lookup("java:/comp/env/") ;
+//                // lecture de la datasource définie par requête JNDI
+                DataSource ds = (DataSource)envContext.lookup("jdbc/databaseWebQuote") ;
+//                // demande d'une connexion à cette datasource
+                connexion = ds.getConnection();
+//                //
+            } catch (javax.naming.NoInitialContextException ex ) {
+//               // pas de context passe en mode manuel => seulement pour les tests
+//               //Appel du pilote de la base de données
                Class.forName("com.mysql.jdbc.Driver");
                //Hebergé
-               String host = "jdbc:mysql://buymanager.cy2rizizzzzx.eu-west-1.rds.amazonaws.com:3306/buymanagerdb";
+               String host = "jdbc:mysql://buymanagerdb.cy2rizizzzzx.eu-west-1.rds.amazonaws.com:3306/buymanagerdb";
                Properties connectionProps = new Properties();
                connectionProps.put("user", "buymanager");
                connectionProps.put("password", "pertilience");
@@ -58,6 +72,10 @@ public class ConnexionDB
 
                //Connexion
                connexion = DriverManager.getConnection(host,connectionProps);
+//                
+            } catch (NamingException ex) {
+                Logger.getLogger(ConnexionDB.class.getName()).log(Level.SEVERE, null, ex);
+            } 
         }            
         return connexion;
     }
@@ -116,5 +134,4 @@ public class ConnexionDB
             return 0;         
         }
     }
-    
 }

@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Context path="/ServiceWeb_BuyManager5">
+  <Resource auth="Container" driverClassName="com.mysql.jdbc.Driver" factory="org.apache.tomcat.jdbc.pool.DataSourceFactory" maxIdle="30" maxTotal="100" minEvictableIdleTimeMillis="55000" name="jdbc/databaseWebQuote" password="pertilience" removeAbandoned="true" timeBetweenEvictionRunsMillis="34000" type="javax.sql.DataSource" url="jdbc:mysql://buymanagerdb.cy2rizizzzzx.eu-west-1.rds.amazonaws.com:3306/buymanagerdb" username="buymanager" validationQuery="SELECT 1"/>
+</Context>

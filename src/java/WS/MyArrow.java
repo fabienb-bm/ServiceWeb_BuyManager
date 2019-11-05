@@ -63,7 +63,7 @@ public class MyArrow extends WsClientDB implements InterfaceWSInterrogeable, Cal
     @Override
     public String getPassword()
     {
-        String password = super.getPassword().toString();
+        String password = "&client_secret="+super.getPassword().toString();
         //if(!super.getPassword().toString().isEmpty())
         //{
             //byte[] decodePassword =  Base64.decodeBase64(super.getPassword().toString());
@@ -75,6 +75,8 @@ public class MyArrow extends WsClientDB implements InterfaceWSInterrogeable, Cal
     public String getAuthentification()
     {
         String authentification = this.getLogin()+this.getPassword();
+        System.out.println("=================================");
+        System.out.println(authentification);
         return authentification;
     }
     

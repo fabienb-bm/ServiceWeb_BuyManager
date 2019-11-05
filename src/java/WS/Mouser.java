@@ -73,13 +73,13 @@ public class Mouser extends WsClientDB implements InterfaceWSInterrogeable, Call
     private static final int nbPoolsThreads = 6;
     
     private String getMyKey(){
-        String cle = "";
+        String cle = super.getKey();
         
-        if(!super.getKey().isEmpty())
-        {
-            byte[] decodePassword =  Base64.decodeBase64(super.getKey());
-            cle = new String(decodePassword);
-        }
+        //if(!super.getKey().isEmpty())
+        //{
+            //byte[] decodePassword =  Base64.decodeBase64(super.getKey());
+            //cle = new String(decodePassword);
+        //}
         if(cle.equals("")){
             cle = key;
         }

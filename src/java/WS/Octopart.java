@@ -66,9 +66,9 @@ public class Octopart extends WsClientDB implements InterfaceWSInterrogeable, Ca
      */
     @Override
     public String getKey() {
-        String mykey = ""; //To change body of generated methods, choose Tools | Templates.
-        byte[] decodePassword =  Base64.decodeBase64(super.getKey());
-        mykey = new String(decodePassword);
+        String mykey = super.getKey(); //To change body of generated methods, choose Tools | Templates.
+        //byte[] decodePassword =  Base64.decodeBase64(super.getKey());
+        //mykey = new String(decodePassword);
         if (mykey.isEmpty()) {
             mykey = octopartGenericKey;
         }

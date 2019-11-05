@@ -90,12 +90,12 @@ public class Rs extends WsClientDB implements InterfaceWSInterrogeable, Callable
      */
     @Override
     public String getKey() {
-        String mykey = ""; //To change body of generated methods, choose Tools | Templates.
-        if(!super.getKey().toString().isEmpty())
-        {
-            byte[] decodePassword =  Base64.decodeBase64(super.getKey().toString());
-            mykey = new String(decodePassword);
-        }
+        String mykey = super.getKey(); //To change body of generated methods, choose Tools | Templates.
+//        if(!super.getKey().toString().isEmpty())
+//        {
+//            byte[] decodePassword =  Base64.decodeBase64(super.getKey().toString());
+//            mykey = new String(decodePassword);
+//        }
         if (mykey.isEmpty()) {
             mykey = rsGenericKey;
         }

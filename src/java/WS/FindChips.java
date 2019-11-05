@@ -48,12 +48,12 @@ public class FindChips extends WsClientDB implements InterfaceWSInterrogeable, C
     @Override
     public String getKey() {
         //Search your Findchips Key due to your clientID and wsID (Webservice)
-        String mykey = "";
-        if(!super.getKey().toString().isEmpty())
-        {
-            byte[] decodeKey =  Base64.decodeBase64(super.getKey().toString());
-            mykey = new String(decodeKey);
-        }
+        String mykey = super.getKey();
+        //if(!super.getKey().toString().isEmpty())
+        //{
+           // byte[] decodeKey =  Base64.decodeBase64(super.getKey().toString());
+            //mykey = new String(decodeKey);
+        //}
         return mykey;
     }
     /**

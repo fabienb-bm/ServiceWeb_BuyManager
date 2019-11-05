@@ -63,12 +63,12 @@ public class MyArrow extends WsClientDB implements InterfaceWSInterrogeable, Cal
     @Override
     public String getPassword()
     {
-        String password = "";
-        if(!super.getPassword().toString().isEmpty())
-        {
-            byte[] decodePassword =  Base64.decodeBase64(super.getPassword().toString());
-            password = "&client_secret="+new String(decodePassword);
-        }
+        String password = super.getPassword().toString();
+        //if(!super.getPassword().toString().isEmpty())
+        //{
+            //byte[] decodePassword =  Base64.decodeBase64(super.getPassword().toString());
+            //password = "&client_secret="+new String(decodePassword);
+        //}
         return password;
     }
     

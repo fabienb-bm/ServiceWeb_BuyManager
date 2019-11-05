@@ -48,12 +48,12 @@ public class Arrow extends WsClientDB implements InterfaceWSInterrogeable, Calla
      */
     @Override
     public String getKey() {
-        String mykey = ""; //To change body of generated methods, choose Tools | Templates.
-        if(!super.getKey().isEmpty())
-        {
-            byte[] decodePassword =  Base64.decodeBase64(super.getKey());
-            mykey = new String(decodePassword);
-        }
+        String mykey = super.getKey(); //To change body of generated methods, choose Tools | Templates.
+        //if(!super.getKey().isEmpty())
+        //{
+            //byte[] decodePassword =  Base64.decodeBase64(super.getKey());
+            //mykey = new String(decodePassword);
+        //}
         if (mykey.isEmpty()) {
             mykey = ARROWKEY;
         }

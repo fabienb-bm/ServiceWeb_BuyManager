@@ -793,6 +793,8 @@ public class ServiceResource {
         //
         ClientDB clientinfo = ClientDB.getCustomerVersion(key, customerKey);
         //
+        
+        System.out.println("============================getDigikeyAuthURL============================");
         Digikey digi = new Digikey();
         return digi.getAccessToken(clientinfo.getClientId(), tempKey);
         //

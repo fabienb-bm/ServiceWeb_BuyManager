@@ -181,7 +181,7 @@ public class Rs extends WsClientDB implements InterfaceWSInterrogeable, Callable
 
         String apikey = this.getKey(); // clef du client //9e82977f-af26-43ca-b055-1befea880251
         String parent = this.getParent();
-      
+
         String paramString = "SessionKey=&PageIndex=" + pageIndex + "&RowLimit=" + rowLimit + "&MPN=" + mpnRef + "&Parent=" + parent + "&ApiKey=" + apikey;
 
         return InterroRs(rsUrlsearchMPN, paramString);
@@ -421,7 +421,7 @@ public class Rs extends WsClientDB implements InterfaceWSInterrogeable, Callable
     private static ArrayList<Prix> recuperationPrix(JSONObject objProducts, ArrayList<Prix> prixList) throws JSONException {
         String lastUpdate = objProducts.getString("TimeLastModified").substring(0, 10);
         JSONArray prices = objProducts.getJSONArray("Prices");
-
+        
         for (int i = 0; i < prices.length(); i++) {
             //Recuperation des prixTab;
             Prix prixTab = new Prix();
@@ -442,9 +442,9 @@ public class Rs extends WsClientDB implements InterfaceWSInterrogeable, Callable
             String sRegionStock = "" ;
             // si le stock pointe sur null, il vaut zéro
             if (! "null".equals(stockString)) {
-                //{"Status":"DISCONTINUED","Quantity":0,"PartialStockQuantity":0,"FutureStockDate":null}
+                //{"Status":"DISCONTINUED","Quantity":0,"PartialStockQuantity":0,"FutureStockDate":null}               
                 JSONObject stockObj = (objProducts.getJSONObject("Stock"));
-                
+
                 if (stockObj.has("Quantity")) {
                     //
                     stockInt = stockObj.getInt("Quantity");
@@ -561,11 +561,10 @@ public class Rs extends WsClientDB implements InterfaceWSInterrogeable, Callable
         try {
             //on recupere un string correspondant au résultat de la requete           
             String resultat = this.InterroRsSKU(sku);
-            ArrayList<Source> produits = new ArrayList<Source>();
+            ArrayList<Source> produits = new ArrayList<Source>();              
             if (!resultat.isEmpty()) {
                 //on recupere le JSON complet
                 JSONObject jsonObject = new JSONObject(resultat);
-
                 //on crée un objet de chaque "product"
                 JSONObject objProducts = jsonObject.getJSONObject("Product");
 

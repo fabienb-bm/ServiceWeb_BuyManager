@@ -75,8 +75,6 @@ public class MyArrow extends WsClientDB implements InterfaceWSInterrogeable, Cal
     public String getAuthentification()
     {
         String authentification = this.getLogin()+this.getPassword();
-        System.out.println("=================================");
-        System.out.println(authentification);
         return authentification;
     }
     
@@ -155,6 +153,8 @@ public class MyArrow extends WsClientDB implements InterfaceWSInterrogeable, Cal
         {
             // Create url to create a authentification token
             URL url = new URL("https://my.arrow.com/api/security/oauth/token?grant_type=client_credentials"+this.getAuthentification());
+            
+            System.out.println(url);
             HttpURLConnection urlConnGetToken = (HttpURLConnection) url.openConnection();
             // Request curl 
             urlConnGetToken.setRequestProperty("X-Requested-With","Curl");
@@ -433,7 +433,7 @@ public class MyArrow extends WsClientDB implements InterfaceWSInterrogeable, Cal
     private ArrayList<Source> JsonToArrSource(String resultatJson, String mpn) throws JSONException {
         //Table 
         ArrayList<Source> produits = new ArrayList<Source>();
-            
+
         //verify if our json exist
         if(!resultatJson.isEmpty() && resultatJson != null)
         {

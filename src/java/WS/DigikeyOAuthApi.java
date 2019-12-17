@@ -30,14 +30,15 @@ import org.scribe.utils.Preconditions;
 
 public class DigikeyOAuthApi extends DefaultApi20 {
 
-    private static final String AUTHORIZATION_URL =
-         "https://sso.digikey.com/as/authorization.oauth2?response_type=code&client_id=%s&redirect_uri=%s";
+    private static final String AUTHORIZATION_URL ="https://api.digikey.com/v1/oauth2/authorize?response_type=code&client_id=%s&redirect_uri=%s";
+         //"https://sso.digikey.com/as/authorization.oauth2?response_type=code&client_id=%s&redirect_uri=%s";
         //"https://quote.fm/labs/authorize?client_id=%s&redirect_uri=%s&scope=%s&response_type=code";
-
-    
+        
+             
     @Override
     public String getAccessTokenEndpoint() {
-        return "https://sso.digikey.com/as/token.oauth2";
+        //return "https://sso.digikey.com/as/token.oauth2";
+        return "https://api.digikey.com/v1/oauth2/token";
     }  
 
     @Override
@@ -109,17 +110,17 @@ public class DigikeyOAuthApi extends DefaultApi20 {
             OAuthRequest request = new OAuthRequest(api.getAccessTokenVerb(), api.getAccessTokenEndpoint());
             switch (api.getAccessTokenVerb()) {
             case POST:
-                request.addBodyParameter(OAuthConstants.CLIENT_ID, config.getApiKey());
-                request.addBodyParameter(OAuthConstants.CLIENT_SECRET, config.getApiSecret());
                 request.addBodyParameter(OAuthConstants.CODE, verifier.getValue());
+                request.addBodyParameter(OAuthConstants.CLIENT_ID, config.getApiKey());
+                request.addBodyParameter(OAuthConstants.CLIENT_SECRET, config.getApiSecret());               
                 request.addBodyParameter(OAuthConstants.REDIRECT_URI, config.getCallback());
                 request.addBodyParameter(GRANT_TYPE, GRANT_TYPE_AUTHORIZATION_CODE);
                 break;
             case GET:
             default:
+                request.addQuerystringParameter(OAuthConstants.CODE, verifier.getValue());
                 request.addQuerystringParameter(OAuthConstants.CLIENT_ID, config.getApiKey());
                 request.addQuerystringParameter(OAuthConstants.CLIENT_SECRET, config.getApiSecret());
-                request.addQuerystringParameter(OAuthConstants.CODE, verifier.getValue());
                 request.addQuerystringParameter(OAuthConstants.REDIRECT_URI, config.getCallback());
                 if(config.hasScope()) request.addQuerystringParameter(OAuthConstants.SCOPE, config.getScope());
             }

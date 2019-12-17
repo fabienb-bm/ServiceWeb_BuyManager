@@ -72,6 +72,8 @@ public class Octopart extends WsClientDB implements InterfaceWSInterrogeable, Ca
         if (mykey.isEmpty()) {
             mykey = octopartGenericKey;
         }
+        
+        System.out.println("OCOTPART KEY: "+mykey);
         return mykey;
     }
 

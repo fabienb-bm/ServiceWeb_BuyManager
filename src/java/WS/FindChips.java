@@ -54,6 +54,10 @@ public class FindChips extends WsClientDB implements InterfaceWSInterrogeable, C
            // byte[] decodeKey =  Base64.decodeBase64(super.getKey().toString());
             //mykey = new String(decodeKey);
         //}
+        if(mykey.toString().isEmpty())
+        {
+            mykey = FINDCHIPSKEY;
+        }
         return mykey;
     }
     /**

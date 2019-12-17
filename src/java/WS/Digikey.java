@@ -55,22 +55,22 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
     //    mdp : Lme198112
     //
     /// information du client rest 
-    /// private key : F5mL1tQ2lE2yC4oP8dB0tJ3vG1aT1eC5gK2gG4fG6uS2bN2pS4
-    /// Client ID : 48d52996-32ef-4081-90e5-3a2bcef11e3e
+    /// private key : dhY77OJLpDLyywcX
+    /// Client ID : 0JBmPbpn8GGFJRMkWkNc34iqMRiUzQyy
     // code ... IuQPaR46DnwpYMRdVcaRTAZkFOsncOypTBfUkQAD ???
-    /// OAuth Redirection URL :https://rqt.buymanager.biz/
+    /// OAuth Redirection URL :http://betaaccountRQT.buymanager.biz/
     //
    // '{"access_token":"lSuPLv7fOoMFSPI5EqXfToKdI8qA","refresh_token":"J5s4TUsKo7prwPwGN4TRQBSVob0FQgbW8xgTsbqJHl","token_type":"Bearer","expires_in":604799}
    // '{"access_token":"D8Gpvq2s9aSLXhE9NMwnlN7fOnXe","refresh_token":"v0C9CpHgsoMxI2UyGb6SqdKUDsJHSny0pb0JCYPmIG","token_type":"Bearer","expires_in":604799}
   
     // clef priver de l'application
-    private static final String privateKey = "F5mL1tQ2lE2yC4oP8dB0tJ3vG1aT1eC5gK2gG4fG6uS2bN2pS4";
+    private static final String privateKey = "dhY77OJLpDLyywcX";
     //
     // identifinat du client chez digikey pour l'appli BM
-    private static final String DigikeyClientID = "48d52996-32ef-4081-90e5-3a2bcef11e3e";
+    private static final String DigikeyClientID = "0JBmPbpn8GGFJRMkWkNc34iqMRiUzQyy";
     //
     // redirection définie dans le service BM
-    private static final String oAuthRedirectionURL ="https://accountRQT.buymanager.biz/oAuthLP.php";
+    private static final String oAuthRedirectionURL ="http://betaaccountRQT.buymanager.biz/oAuthLP.php";
     //
     // token que j'ai recup la premiere fois (token du compte LME)
     private static final String access_tokenBM = "lSuPLv7fOoMFSPI5EqXfToKdI8qA";
@@ -217,7 +217,8 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
                                         .callback(oAuthRedirectionURL)
                                         .build();
         
-        System.out.println("get token:"+service);
+
+        
         Verifier verifier = null;
         Token accessToken = null; 
         String authorizationUrl = service.getAuthorizationUrl(null);
@@ -498,20 +499,19 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
         if ( mode == MPNSEARCH){
           
             // BASIC API : Keyword Search pour récupérer l'ensemble des "Digikey reference" du MPN (1 référence par packaging)
-            body = RequestBody.create(mediaType,"{\"SearchOptions\":[\"ManufacturerPartSearch\"],\n" +
-                                                "  \"Keywords\": \""+mpn+"\",\n" +
+            body = RequestBody.create(mediaType,"{ \"Keywords\": \""+mpn+"\",\n" +
                                                 "  \"RecordCount\": 30,\n" +
                                                 "  \"RecordStartPosition\": 0\n" +
                                                 "}");
             
             reqBuilder = new Request.Builder()
-                .url("https://api.digikey.com/services/partsearch/v2/keywordsearch")
+                //.url("https://api.digikey.com/services/partsearch/v2/keywordsearch")
+                .url("https://api.digikey.com/Search/v3/Products/Keyword")
                 .post(body)
-                .addHeader("accept", "application/json")
-                .addHeader("authorization", myKey)
-                .addHeader("x-ibm-client-id", DigikeyClientID)
-                .addHeader("content-type", "application/json")
+                .addHeader("X-DIGIKEY-Client-Id", DigikeyClientID)
+                .addHeader("Authorization","Bearer "+myKey)
                 .addHeader("X-DIGIKEY-Locale-Site",this.getCountry())
+                .addHeader("X-DIGIKEY-Locale-Language",this.getCountry())
                 .addHeader("X-DIGIKEY-Locale-Currency",this.getDevise())
                 .addHeader("X-DIGIKEY-Locale-ShipToCountry",this.getShipToCountry());
 //            //
@@ -520,7 +520,7 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
             }
             //
             request = reqBuilder.build();
-            //System.out.println(request);
+
         }else if (mode == SKUSEARCH){
 
             body = RequestBody.create(mediaType,"{\"Part\": \""+mpn+"\"}");
@@ -542,6 +542,8 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
                reqBuilder.addHeader("X-DIGIKEY-Customer-Id",myLogin);
             }
             //
+            
+            
             request = reqBuilder.build();
         
         }else{ 
@@ -642,7 +644,7 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
                     
                     JSONObject objManufacturer = objPart.getJSONObject("ManufacturerName");
                     
-                    produit.setNomFabricant(objManufacturer.getString("Text"));
+                    //produit.setNomFabricant(objManufacturer.getString("Text"));
                     produit.setUid(objPart.getString("DigiKeyPartNumber"));
                     produit.setOrigine("Digikey");
                     produit.setUrlWs(objPart.getString("PartUrl"));
@@ -698,7 +700,7 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
                             myPrice.setLeadDays(leadweeksint * 7);
                             myPrice.setFournisseur("Digikey (direct Public)");
                             myPrice.setSku(objPart.getString("DigiKeyPartNumber")); 
-                            myPrice.setStock(objPart.getInt("QuantityOnHand"));
+                            myPrice.setStock(objPart.getInt("QuantityAvailable"));
                             myPrice.setStockRegions("");
                             //myPrice.setLastUpdate(strLastUpdate);
                             // on peut avoir des prix à 0 
@@ -717,7 +719,7 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
                             //
                             Prix myPrice = new Prix();
                             myPrice.setMoq(objPrice.getInt("BreakQuantity"));
-                            //myPrice.setMpq(objPart.getInt("StandardPackage"));
+                            myPrice.setMpq(objPart.getInt("StandardPackage"));
                             myPrice.setLeadDays(leadweeksint * 7);
                             myPrice.setQuantite(objPrice.getInt("BreakQuantity"));
                             myPrice.setPrix(objPrice.getDouble("UnitPrice"));
@@ -725,7 +727,7 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
                             myPrice.setPackaging(packaging);
                             myPrice.setFournisseur("Digikey (direct Nego)");
                             myPrice.setSku(objPart.getString("DigiKeyPartNumber")); 
-                            myPrice.setStock(objPart.getInt("QuantityOnHand"));
+                            myPrice.setStock(objPart.getInt("QuantityAvailable"));
                             myPrice.setStockRegions("");
                             //myPrice.setLastUpdate(strLastUpdate);
                             // on peut avoir des prix à 0 
@@ -832,7 +834,7 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
                 //on recupere le JSON complet
                 JSONObject jsonObject = new JSONObject(resultatJson);
                 // On récupère le tableau d'objets spécifique à l'entrée "products"
-                JSONArray parts = jsonObject.getJSONArray("Parts");
+                JSONArray parts = jsonObject.getJSONArray("Products");
 
                 //Pour chacune des entrées de "products":
                 for (int i = 0; i < parts.length(); i++) {
@@ -846,14 +848,14 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
                     produit.setMpn(objPart.getString("ManufacturerPartNumber"));
                     produit.setNomProduit(objPart.getString("ProductDescription"));
                     
-                    JSONObject objManufacturer = objPart.getJSONObject("ManufacturerName");
+                    JSONObject objManufacturer = objPart.getJSONObject("Manufacturer");
                     
-                    produit.setNomFabricant(objManufacturer.getString("Text"));
+                    produit.setNomFabricant(objManufacturer.getString("Value"));
                     produit.setUid(objPart.getString("DigiKeyPartNumber"));
                     produit.setOrigine("Digikey");
-                    produit.setUrlWs(objPart.getString("PartUrl"));
+                    produit.setUrlWs(objPart.getString("ProductUrl"));
                     //
-                    produit.setStock(objPart.getInt("QuantityOnHand"));
+                    produit.setStock(objPart.getInt("QuantityAvailable"));
                     
                     //
                     String packaging = "";
@@ -904,7 +906,7 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
                             myPrice.setPackaging(packaging);
                             myPrice.setFournisseur("Digikey (direct Public)");
                             myPrice.setSku(objPart.getString("DigiKeyPartNumber")); 
-                            myPrice.setStock(objPart.getInt("QuantityOnHand"));
+                            myPrice.setStock(objPart.getInt("QuantityAvailable"));
                             myPrice.setStockRegions("");
                             //myPrice.setLastUpdate(strLastUpdate);
                             // on peut avoir des prix à 0 
@@ -930,9 +932,9 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
                         //------------
                         // autre infos 
                         //------------
-                        if ( objPart.has("RohsInfo")){
+                        if ( objPart.has("RoHSStatus")){
                             Specs uneSpec = new Specs();
-                            uneSpec.setROHS(objPart.getString("RohsInfo"));
+                            uneSpec.setROHS(objPart.getString("RoHSStatus"));
                             specsItem.add(uneSpec);
                         }
                         //
@@ -943,8 +945,8 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
                                 sCycle = "Obsolete ";
                             }
                         }
-                        if (objPart.has("PartStatus") ){
-                            sCycle = sCycle.concat(objPart.getString("PartStatus"));
+                        if (objPart.has("ProductStatus") ){
+                            sCycle = sCycle.concat(objPart.getString("ProductStatus"));
                         }
                         
                         if (sCycle.equals("") == false) {

@@ -523,18 +523,22 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
 
         }else if (mode == SKUSEARCH){
 
-            body = RequestBody.create(mediaType,"{\"Part\": \""+mpn+"\"}");
+            //body = RequestBody.create(mediaType,"{\"Part\": \""+mpn+"\"}");
         // BASIC API
             reqBuilder = new Request.Builder()
-                .url("https://api.digikey.com/services/partsearch/v2/partdetails")
-                .post(body)
-                .addHeader("accept", "application/json")
-                .addHeader("authorization", myKey)
-                .addHeader("x-ibm-client-id", DigikeyClientID)
-                .addHeader("content-type", "application/json")
+                //.url("https://api.digikey.com/services/partsearch/v2/partdetails")
+                .url("https://api.digikey.com/Search/v3/Products/"+mpn)
+                //.post(body)
+                
+                //.addHeader("accept", "application/json")
+                .addHeader("X-DIGIKEY-Client-Id", DigikeyClientID)
+                .addHeader("Authorization","Bearer "+myKey)
+                //.addHeader("content-type", "application/json")
                 .addHeader("X-DIGIKEY-Locale-Site",this.getCountry())
+                .addHeader("X-DIGIKEY-Locale-Language",this.getCountry())
                 .addHeader("X-DIGIKEY-Locale-Currency",this.getDevise())
                 .addHeader("X-DIGIKEY-Locale-ShipToCountry",this.getShipToCountry());
+                
             
             
             //
@@ -543,21 +547,23 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
             }
             //
             
-            
-            request = reqBuilder.build();
+            System.out.println("================================BUILDER=================================");
+            System.out.println(reqBuilder);
+            request = reqBuilder.get().build();
         
         }else{ 
             String myText = mpn ; //UriComponent.encode(mpn, UriComponent.Type.QUERY_PARAM_SPACE_ENCODED);
             body = RequestBody.create(mediaType, "{ \"Keywords\": \""+myText+"\", \"RecordCount\":30, \"RecordStartPosition\":0 }");
         
             reqBuilder = new Request.Builder()
-                .url("https://api.digikey.com/services/partsearch/v2/keywordsearch")
+                .url("https://api.digikey.com/Search/v3/Products/Keyword")
                 .post(body)
                 .addHeader("accept", "application/json")
-                .addHeader("authorization", myKey)
+                .addHeader("authorization","Bearer "+myKey)
                 .addHeader("x-ibm-client-id", DigikeyClientID)
                 .addHeader("content-type", "application/json")
                 .addHeader("X-DIGIKEY-Locale-Site",this.getCountry())
+                .addHeader("X-DIGIKEY-Locale-Language",this.getCountry())
                 .addHeader("X-DIGIKEY-Locale-Currency",this.getDevise())
                 .addHeader("X-DIGIKEY-Locale-ShipToCountry",this.getShipToCountry());
             //
@@ -572,9 +578,10 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
         //
         try {
             Response response = client.newCall(request).execute();
-            
+            System.out.println("================================RESPONSE=================================");
+            System.out.println(response);
             if ( response.isSuccessful() ) {
-                return response.body().string();
+                return response.body().string();             
             }else{
                 //
                 String returnValue = "";
@@ -628,7 +635,7 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
                 //on recupere le JSON complet
                 JSONObject jsonObject = new JSONObject(resultatJson);
                 // On récupère le tableau d'objets spécifique à l'entrée "products"
-                JSONObject objPart = jsonObject.getJSONObject("PartDetails");
+                //JSONObject objPart = jsonObject.getJSONObject("Products");
 
 //                //Pour chacune des entrées de "products":
 //                for (int i = 0; i < parts.length(); i++) {
@@ -639,33 +646,33 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
                     //On crée un nouvel article pour chaque "products"
                     Source produit = new Source();
 
-                    produit.setMpn(objPart.getString("ManufacturerPartNumber"));
-                    produit.setNomProduit(objPart.getString("ProductDescription"));
+                    produit.setMpn(jsonObject.getString("ManufacturerPartNumber"));
+                    produit.setNomProduit(jsonObject.getString("ProductDescription"));
                     
-                    JSONObject objManufacturer = objPart.getJSONObject("ManufacturerName");
+                    JSONObject objManufacturer = jsonObject.getJSONObject("Manufacturer");
                     
-                    //produit.setNomFabricant(objManufacturer.getString("Text"));
-                    produit.setUid(objPart.getString("DigiKeyPartNumber"));
+                    produit.setNomFabricant(objManufacturer.getString("Value"));
+                    produit.setUid(jsonObject.getString("DigiKeyPartNumber"));
                     produit.setOrigine("Digikey");
-                    produit.setUrlWs(objPart.getString("PartUrl"));
+                    produit.setUrlWs(jsonObject.getString("ProductUrl"));
                     //
-                    produit.setStock(objPart.getInt("QuantityOnHand"));
+                    produit.setStock(jsonObject.getInt("QuantityAvailable"));
                     
                     //
                     String packaging = "";
                     // si on a un package type on le prend
-                    if (objPart.has("PackageType") ){
-                        packaging = objPart.getString("PackageType");
+                    if (jsonObject.has("PackageType") ){
+                        packaging = jsonObject.getString("PackageType");
                     }
                     // si on a le packaging type c'est mieux
-                    if (objPart.has("Packaging") ){
-                        JSONObject myPackaging = objPart.getJSONObject("Packaging");
+                    if (jsonObject.has("Packaging") ){
+                        JSONObject myPackaging = jsonObject.getJSONObject("Packaging");
                         packaging = myPackaging.getString("Value");
                     }
 
                     Integer leadweeksint = 0;
-                    if (objPart.has("ManufacturerLeadWeeks")){
-                        String[] leadweeks = objPart.getString("ManufacturerLeadWeeks").split(" ");
+                    if (jsonObject.has("ManufacturerLeadWeeks")){
+                        String[] leadweeks = jsonObject.getString("ManufacturerLeadWeeks").split(" ");
                         if (leadweeks.length > 0) {
                             if (leadweeks[0].matches("[+-]?\\d*(\\.\\d+)?" )){
                                 if (leadweeks[0].length() > 0) {
@@ -683,8 +690,8 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
                     ArrayList<Prix> prixList = new ArrayList<Prix>();
                     
                     //
-                    if (optionPrix  && objPart.has("StandardPricing") ) {
-                        JSONArray prices = objPart.getJSONArray("StandardPricing");
+                    if (optionPrix  && jsonObject.has("StandardPricing") ) {
+                        JSONArray prices = jsonObject.getJSONArray("StandardPricing");
                         //
                         //                        
                         for (int itPrices = 0; itPrices < prices.length(); itPrices++) {
@@ -699,8 +706,8 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
                             myPrice.setPackaging(packaging);
                             myPrice.setLeadDays(leadweeksint * 7);
                             myPrice.setFournisseur("Digikey (direct Public)");
-                            myPrice.setSku(objPart.getString("DigiKeyPartNumber")); 
-                            myPrice.setStock(objPart.getInt("QuantityAvailable"));
+                            myPrice.setSku(jsonObject.getString("DigiKeyPartNumber")); 
+                            myPrice.setStock(jsonObject.getInt("QuantityAvailable"));
                             myPrice.setStockRegions("");
                             //myPrice.setLastUpdate(strLastUpdate);
                             // on peut avoir des prix à 0 
@@ -710,8 +717,8 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
                         }
                         
                     }
-                    if (optionPrix  && objPart.has("MyPricing") ) {
-                        JSONArray MyPrices = objPart.getJSONArray("MyPricing");
+                    if (optionPrix  && jsonObject.has("MyPricing") ) {
+                        JSONArray MyPrices = jsonObject.getJSONArray("MyPricing");
                         //
                         //                        
                         for (int itPrices = 0; itPrices < MyPrices.length(); itPrices++) {
@@ -719,15 +726,15 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
                             //
                             Prix myPrice = new Prix();
                             myPrice.setMoq(objPrice.getInt("BreakQuantity"));
-                            myPrice.setMpq(objPart.getInt("StandardPackage"));
+                            myPrice.setMpq(jsonObject.getInt("StandardPackage"));
                             myPrice.setLeadDays(leadweeksint * 7);
                             myPrice.setQuantite(objPrice.getInt("BreakQuantity"));
                             myPrice.setPrix(objPrice.getDouble("UnitPrice"));
                             myPrice.setDevise(this.getDevise().toUpperCase());
                             myPrice.setPackaging(packaging);
                             myPrice.setFournisseur("Digikey (direct Nego)");
-                            myPrice.setSku(objPart.getString("DigiKeyPartNumber")); 
-                            myPrice.setStock(objPart.getInt("QuantityAvailable"));
+                            myPrice.setSku(jsonObject.getString("DigiKeyPartNumber")); 
+                            myPrice.setStock(jsonObject.getInt("QuantityAvailable"));
                             myPrice.setStockRegions("");
                             //myPrice.setLastUpdate(strLastUpdate);
                             // on peut avoir des prix à 0 
@@ -741,8 +748,8 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
                         produit.setListePrix(prixList);
                     }
                     
-                    if (optionSpec && objPart.has("Parameters") ) {
-                        JSONArray listSpec = objPart.getJSONArray("Parameters");
+                    if (optionSpec && jsonObject.has("Parameters") ) {
+                        JSONArray listSpec = jsonObject.getJSONArray("Parameters");
                         ArrayList<Specs> specsItem = new ArrayList<Specs>();
                         for (int itListSpec = 0; itListSpec < listSpec.length(); itListSpec++) {
                             Specs uneSpec = new Specs();
@@ -756,21 +763,21 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
                         //------------
                         // autre infos 
                         //------------
-                        if ( objPart.has("RohsInfo")){
+                        if ( jsonObject.has("RoHSStatus")){
                             Specs uneSpec = new Specs();
-                            uneSpec.setROHS(objPart.getString("RohsInfo"));
+                            uneSpec.setROHS(jsonObject.getString("RoHSStatus"));
                             specsItem.add(uneSpec);
                         }
                         //
                         String sCycle = "";
-                        if ( objPart.has("Obsolete")){
-                            boolean bObso = objPart.getBoolean("Obsolete");
+                        if ( jsonObject.has("Obsolete")){
+                            boolean bObso = jsonObject.getBoolean("Obsolete");
                             if (bObso ){
                                 sCycle = "Obsolete ";
                             }
                         }
-                        if (objPart.has("PartStatus") ){
-                            sCycle = sCycle.concat(objPart.getString("PartStatus"));
+                        if (jsonObject.has("ProductStatus") ){
+                            sCycle = sCycle.concat(jsonObject.getString("ProductStatus"));
                         }
                         
                         if (sCycle.equals("") == false) {
@@ -782,7 +789,7 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
                         produit.setListeSpecs(specsItem);
                     }
                     
-                    if (optionDS && objPart.has("PrimaryDatasheet")) {
+                    if (optionDS && jsonObject.has("PrimaryDatasheet")) {
                         
                         String myDataSheetString = "";
                         ArrayList<Datasheet> datasheet = new ArrayList<Datasheet>();
@@ -790,11 +797,11 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
                         try{
                             //
                             // test en mode chaine
-                            myDataSheetString = objPart.getString("PrimaryDatasheet");
+                            myDataSheetString = jsonObject.getString("PrimaryDatasheet");
                         } catch (JSONException ex) {
                             //
                             // inon on teste en mode Object
-                            JSONObject myDataSheet = objPart.getJSONObject("PrimaryDatasheet");
+                            JSONObject myDataSheet = jsonObject.getJSONObject("PrimaryDatasheet");
                             myDataSheetString = myDataSheet.getString("urlField");
                             //
                         }

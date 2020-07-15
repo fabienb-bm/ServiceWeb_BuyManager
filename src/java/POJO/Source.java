@@ -139,7 +139,9 @@ public class Source {
     */
     private ArrayList<Datasheet> datasheet;
     
-
+    private String errorStatus;
+    
+    private String errorMessage;
     
     /*************************
     * Constructeurs
@@ -376,12 +378,44 @@ public class Source {
     }
 
     /**
-     * @param rohs the listeSpecs to set
+     * @param rohs the rohs to set
      */
     public void setRohsProduit(ArrayList rohsProduit) {
         this.rohsProduit = rohsProduit;
     }
     
+     /**
+     * @return the error
+     */
+    
+    public String getErrorStatus()
+    {
+        return errorStatus;
+    }
+    
+    /**
+     * @param error the error to set
+     */
+    public void setErrorStatus(String errorStatus)
+    {
+        this.errorStatus = errorStatus;
+    }
+         /**
+     * @return the error
+     */
+    
+    public String getErrorMessage()
+    {
+        return errorMessage;
+    }
+    
+    /**
+     * @param error the error to set
+     */
+    public void setErrorMessage(String errorMessage)
+    {
+        this.errorMessage = errorMessage;
+    }
     /**
      * @return the numberPackagingTempo
      */

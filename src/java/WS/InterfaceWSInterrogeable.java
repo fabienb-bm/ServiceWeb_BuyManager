@@ -45,5 +45,7 @@ public interface InterfaceWSInterrogeable{
      * Return vrai si une erreur est detecté
      */
     public boolean getErrorStatus();
+
+    public String getNameWS();
     
 }

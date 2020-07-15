@@ -118,7 +118,7 @@ public class Rs extends WsClientDB implements InterfaceWSInterrogeable, Callable
         connection.setDoInput(true);
         connection.setDoOutput(true);
         connection.setReadTimeout(20000); // au dela de 20 s on considere que RS est HS
-
+     
         try{
             //Envoi de la requête
             DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
@@ -148,7 +148,7 @@ public class Rs extends WsClientDB implements InterfaceWSInterrogeable, Callable
                 StringBuilder response = new StringBuilder();
 
                 //Lecture de chaque ligne
-                while ((line = rd.readLine()) != null) {
+                while ((line = rd.readLine()) != null) {     
                     response.append(line);
                 }
 
@@ -665,6 +665,11 @@ public class Rs extends WsClientDB implements InterfaceWSInterrogeable, Callable
     @Override
     protected int getNbThread() {
         return nbPoolsThreads;
+    }
+
+    @Override
+    public String getNameWS() {
+        return "RS";
     }
     
     

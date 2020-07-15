@@ -8,10 +8,18 @@ import DB.WsClientDB;
 import DB.UtilisationClientDB;
 import DB.ip_listDB;
 import DB.ClientDB;
+import DB.ConnexionDB;
 import POJO.Source;
+import WS.Arrow;
 import WS.Digikey;
+import WS.Farnell;
+import WS.FindChips;
+import WS.Mouser;
+import WS.MyArrow;
+import WS.Rs;
 import WS.TME;
 import java.io.IOException;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -145,6 +153,18 @@ public class ServiceResource {
             boolean optionS = "true".equals(optionSpec);
             boolean optionDataS = "true".equals(optionDS);
 
+            //on vérifie pour quelles APIs, le client a les droits et on fait une liste de ces APIs
+            ArrayList<InterfaceWSInterrogeable> listeWsToGetAccess =  this.getAccessToken(clientID,listWS) ;
+            
+            //Test des apis pour vérifier si nous y avons accès : Exemple = Test les access token pour digikey
+            for(int indiceWS = 0; indiceWS < listeWsToGetAccess.size() ;indiceWS++)
+            { 
+                String nameWS = listeWsToGetAccess.get(indiceWS).getNameWS();
+                if(nameWS.equals("Digikey")){
+                    boolean tokenOk = listeWsToGetAccess.get(indiceWS).getErrorStatus();                 
+                }
+            }
+            
             //on vérifie pour quelles APIs, le client a les droits et on fait une liste de ces APIs
             ArrayList<InterfaceWSInterrogeable> listeWs = WsClientDB.creationListeWs(clientID, nbMPNs,listWS);
             
@@ -837,6 +857,83 @@ public class ServiceResource {
         ArrayList<manufacturerMasterList> arrManufacturer = manufacturerMasterList.getAllSql();
         //
         return Json.ToJsonArrManufacturerList(arrManufacturer);
+    }
+    
+    public static ArrayList<InterfaceWSInterrogeable> getAccessToken(int clientID,String listWS) throws SQLException
+    {
+        ArrayList<InterfaceWSInterrogeable> liste = new ArrayList<InterfaceWSInterrogeable>();
+        String requete;
+        
+        String[] list = listWS.split("\\|\\|");                
+        String params = "";
+        for(int i = 0;i<list.length;i++){
+            if(i == list.length-1){
+                params += list[i];
+            }else{
+                params += list[i]+",";
+            }
+        }
+        requete = "  SELECT ws_client.* "
+                + " FROM ws_client "
+                + " WHERE `clientID`='" + clientID + "' "
+                + " AND `interroParDefaut`='true' "
+                + " AND `wsID` in ("+params+")";
+        
+        ResultSet reponse = ConnexionDB.ExecuteQuery(requete);
+
+        //Boucle sur la base de données
+        while (reponse.next()) {
+            WsClientDB wsClient;
+            int wsID = reponse.getInt("wsID");
+            //
+            switch (wsID) {
+                case 2:
+                    wsClient = new Farnell();
+                    liste.add((Farnell) wsClient);
+                    break;
+                case 3:
+                    wsClient = new Rs();
+                    liste.add((Rs) wsClient);
+                    break;
+                case 4:
+                    wsClient = new TME();
+                    liste.add((TME) wsClient);
+                    break;
+                case 5:
+                    wsClient = new Mouser();
+                    liste.add((Mouser) wsClient);
+                    break;
+                case 6:
+                    wsClient = new Digikey();
+                    liste.add((Digikey) wsClient);
+                    break;
+                case 7 :
+                    wsClient = new Arrow();
+                    liste.add((Arrow) wsClient);
+                    break;
+                case 8 :
+                    wsClient = new MyArrow();
+                    liste.add((MyArrow) wsClient);
+                    break;
+                case 9 :
+                    wsClient = new FindChips();
+                    liste.add((FindChips) wsClient);
+                    break;
+                default:
+                    wsClient = new WsClientDB();
+                    break;
+            }
+
+            /**
+             * Recupere la clef du web service
+             */
+            wsClient.setWsId(wsID);
+            wsClient.setClientId(reponse.getInt("clientID"));
+            wsClient.setKey(reponse.getString("key"));
+            wsClient.setLogin(reponse.getString("login"));
+            wsClient.setPassword(reponse.getString("password"));
+        }
+        return liste;
     }
      
     

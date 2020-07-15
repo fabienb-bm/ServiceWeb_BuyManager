@@ -234,9 +234,7 @@ public class TME extends WsClientDB implements InterfaceWSInterrogeable, Callabl
                 reponse = webTarget.request(MediaType.APPLICATION_FORM_URLENCODED_TYPE)
                                     .post(Entity.entity(form, MediaType.APPLICATION_FORM_URLENCODED_TYPE));
                 reponseAuxi = reponse.readEntity(String.class);
-                //System.out.println(reponseAuxi);
                 if (reponse.getStatus() == 200) {
-                    //System.out.println(reponseAuxi);
                     if (type.equals("prix")) {
                         mapping(objetsSources, reponseAuxi, traceurs, "prix");
                     } else if (type.equals("ds")) {
@@ -738,6 +736,7 @@ public class TME extends WsClientDB implements InterfaceWSInterrogeable, Callabl
         responsePrivateKey = reponse.readEntity(String.class);
         JSONObject rep;
         String Nonce = "";
+        System.out.println("WS.TME.getNonce()"+ responsePrivateKey);
         try {
             rep = new JSONObject(responsePrivateKey);
             Nonce = rep.getJSONObject("Data").getString("Nonce");
@@ -800,6 +799,11 @@ public class TME extends WsClientDB implements InterfaceWSInterrogeable, Callabl
         } catch (SQLException ex) {
             Logger.getLogger(WsClientDB.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+
+    @Override
+    public String getNameWS() {
+        return "TME";
     }
     
 }

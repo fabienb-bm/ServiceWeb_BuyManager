@@ -2,6 +2,7 @@
 package WS;
 //Project class
 import DB.WsClientDB;
+import POJO.Datasheet;
 import POJO.Prix;
 import POJO.SearchResult;
 import POJO.Source;
@@ -33,9 +34,9 @@ import org.codehaus.jettison.json.JSONObject;
 public class FindChips extends WsClientDB implements InterfaceWSInterrogeable, Callable<ArrayList<SearchResult>> {
 
     //Default BM key for test (not used for the customer)
-    static final String FINDCHIPSKEY = "m79wo9S4nrsxG";
+    static final String FINDCHIPSKEY = "DOrucahPkKgGeqhzg14V";
     //Link Findchips API
-    static final String SERVICETOKEN = "http://api.findchips.com/v1/search?";
+    static final String SERVICETOKEN = "http://api.findchips.com/v1/fcl-search?";
 
     private static final int nbPoolsThreads = 6;
     
@@ -80,7 +81,7 @@ public class FindChips extends WsClientDB implements InterfaceWSInterrogeable, C
         okhttp3.MediaType mediaType = okhttp3.MediaType.parse("application/json");    
         //Build url for call findchips api
         String totalUrl = SERVICETOKEN;
-        totalUrl = totalUrl.concat("&apiKey="+this.getKey()+"&part="+mySearch);       
+        totalUrl = totalUrl.concat("&tinyUrl=true&apiKey="+this.getKey()+"&part="+mySearch+"&limit=100&hardWaitTime=9900&softWaitTime=9600&useHardWait=true&truncatedSearch=true&ip=15.188.42.94&site=fc");       
         Request request = new Request.Builder()
                     .url(totalUrl)
                     .build();     
@@ -102,7 +103,7 @@ public class FindChips extends WsClientDB implements InterfaceWSInterrogeable, C
             return "-1";
         }
     }
-
+    
     /**
      * Permet la récupération des informations sous format JSON pour les parser
      * et les intégrer dans un tableau d'articles à partir d'un seul MPN
@@ -127,7 +128,7 @@ public class FindChips extends WsClientDB implements InterfaceWSInterrogeable, C
             String resultatJson = this.InterroFindChips(mpn);
             //
             if (!resultatJson.isEmpty()) {
-                ArrayList<Source> produits = this.JsonToArrSource(resultatJson, mpn);
+                ArrayList<Source> produits = this.JsonToArrSource(resultatJson, mpn);//resultatJsonPartIO);
                 return produits;
             }else{
                 return null;
@@ -209,12 +210,6 @@ public class FindChips extends WsClientDB implements InterfaceWSInterrogeable, C
                 {
                     prixTab.setLastUpdate(objPart.getString("lastUpdated"));
                 }
-
-                if(objPart.has("minimumQuantity"))
-                {
-                    prixTab.setMoq(objPart.getInt("minimumQuantity"));
-                }
-
                 if(objPart.has("packageMultiple"))
                 {
                     prixTab.setMpq(objPart.getInt("packageMultiple"));
@@ -222,9 +217,14 @@ public class FindChips extends WsClientDB implements InterfaceWSInterrogeable, C
 
                 if(objPart.has("distributorItemNo"))
                 {
-                    prixTab.setSku(objPart.getString("distributorItemNo"));     
+                    prixTab.setSku(objPart.getString("distributorItemNo"));  
                 }
 
+                if(objDistributor.getString("name").toUpperCase().equals("TTI"))
+                {
+                    prixTab.setSku(objPart.getString("part"));                     
+                }
+                
                 if(objPart.has("stock"))
                 {
                     prixTab.setStock(objPart.getInt("stock"));                 
@@ -309,11 +309,12 @@ public class FindChips extends WsClientDB implements InterfaceWSInterrogeable, C
                 {
                     prixTab.setPrix(objPartPrice.getDouble("price"));                 
                 }
-                
+
                 if(objPartPrice.has("quantity"))
                 {
-                    prixTab.setQuantite(objPartPrice.getInt("quantity"));
-                }
+                    prixTab.setQuantite(objPartPrice.getInt("quantity"));                   
+                    prixTab.setMoq(objPartPrice.getInt("quantity"));
+                }             
                 
                 if(objPartPrice.has("currency"))
                 {
@@ -329,11 +330,13 @@ public class FindChips extends WsClientDB implements InterfaceWSInterrogeable, C
         
     }
 
-    private ArrayList<Source> JsonToArrSource(String resultatJson, String mpn) throws JSONException {
+    private ArrayList<Source> JsonToArrSource(String resultatJson, String mpn /*,String resultatJsonPartIO*/) throws JSONException {
         // Catch response from Findchips API in JsonObject 
         JSONObject objProducts = new JSONObject(resultatJson);
+        //JSONObject objProductsPartIO = new JSONObject(resultatJsonPartIO);
         // Catch all the responses from the jsonobject structure in a JSONarray
         JSONArray response = objProducts.getJSONArray("response"); 
+        //JSONArray responsePartIO = objProductsPartIO.getJSONArray("response"); 
         //Init var
         int StockTotalMPN = 0 ;
         int indice = 0;
@@ -346,7 +349,7 @@ public class FindChips extends WsClientDB implements InterfaceWSInterrogeable, C
         ArrayList tabMPN = new ArrayList();
         ArrayList<Prix> prixListFindchips = new ArrayList<Prix>();
         ArrayList<Specs> specsItem = new ArrayList<Specs>();      
-        
+        ArrayList<Specs> datasheet = new ArrayList<Specs>();
        //loop in all responses from FindChips API
        for(int indexResponse = 0; indexResponse < response.length(); indexResponse++)
        {
@@ -354,6 +357,7 @@ public class FindChips extends WsClientDB implements InterfaceWSInterrogeable, C
            JSONObject objResponse = response.getJSONObject(indexResponse);   
            //get Supplier 
            JSONObject objDistributor = objResponse.getJSONObject("distributor");
+           
            //get JSONArray to parts according to the current object
            JSONArray parts = objResponse.getJSONArray("parts");           
            //loop in all parts in current JSONArray
@@ -362,7 +366,7 @@ public class FindChips extends WsClientDB implements InterfaceWSInterrogeable, C
                //get JSONObject according to the current iParts
                JSONObject objPart = parts.getJSONObject(indexParts);
                //Get Current part to our parts response
-               currentMPN = objPart.getString("part");             
+               currentMPN = objPart.getString("part");       
                //check if current part exists in our table
                if(tabMPN.contains(currentMPN))
                {
@@ -407,12 +411,14 @@ public class FindChips extends WsClientDB implements InterfaceWSInterrogeable, C
                    prixListFindchips = new ArrayList<Prix>();
                    //Create new specs list
                    specsItem = new ArrayList<Specs>();
+                   //Create a new datashette array
+                   datasheet = new ArrayList<Specs>();
                    //Create new specs list
                    tabRohs = new ArrayList();
                    //Get mpn / manucfaturer / description of our new prouit
                    this.MPNData(produit,objPart,objDistributor,prixListFindchips,specsItem); 
                    // Get Rohs current
-                   this.CurrentROHs(objPart,specsItem,produit,tabRohs,sRohs);                  
+                   this.CurrentROHs(objPart,specsItem,produit,tabRohs,sRohs); 
                    produit.setRohsProduit(tabRohs);
                    produit.setListeSpecs(specsItem);
                    //Check if price list is empty. Can't add stock when price list is empty
@@ -447,11 +453,14 @@ public class FindChips extends WsClientDB implements InterfaceWSInterrogeable, C
             if(objRohs.has("DEFAULT") && !objRohs.getString("DEFAULT").isEmpty())
             {
                  //verify if objRohs.getString("pbFree") doesn't exist in our list and isn't empty
-                 if(objPart.has("pbFree") && !objPart.getString("pbFree").isEmpty() && !rohs.contains(objRohs.getString("DEFAULT").toLowerCase()+" / pbFree: "+objPart.getString("pbFree").toLowerCase()))
+                 if(objPart.has("pbFree")) 
                  {
-                     //Add in our rohs list
-                     sRohs = objRohs.getString("DEFAULT").toLowerCase()+" / pbFree: "+objPart.getString("pbFree").toLowerCase();
-                     rohs.add(sRohs);
+                    if (!objPart.getString("pbFree").isEmpty() && !rohs.contains(objRohs.getString("DEFAULT").toLowerCase()+" / pbFree: "+objPart.getString("pbFree").toLowerCase()))
+                    {
+                        //Add in our rohs list
+                        sRohs = objRohs.getString("DEFAULT").toLowerCase()+" / pbFree: "+objPart.getString("pbFree").toLowerCase();
+                        rohs.add(sRohs);
+                    }
                  }
                  else
                  {
@@ -468,10 +477,10 @@ public class FindChips extends WsClientDB implements InterfaceWSInterrogeable, C
             {
                 if(objPart.has("pbFree"))
                 {
-                    if(!objPart.getString("pbFree").isEmpty() && !rohs.contains(objRohs.getString("pbFree").toLowerCase()))
+                    if(!objPart.getString("pbFree").isEmpty() && !rohs.contains(objPart.getString("pbFree").toLowerCase()))
                     {
                         //Add in our rohs list
-                        sRohs = objRohs.getString("pbFree").toLowerCase();
+                        sRohs = objPart.getString("pbFree").toLowerCase();
                         rohs.add(sRohs);  
                     }
                 }
@@ -491,11 +500,11 @@ public class FindChips extends WsClientDB implements InterfaceWSInterrogeable, C
        
        if(!sRohs.isEmpty() && specsItem.size()>0)
        {
-            Specs specs = new Specs();
+            Specs specs = new Specs();           
             //Catch our list from current produit and we add the next value 
             specs.setROHS(specsItem.get(0).getValue() + ", "+ sRohs);
             //Clear old list
-            specsItem.clear();                        
+            specsItem.clear();                       
             //Add new list with new value
             specsItem.add(specs);
        }else
@@ -591,8 +600,12 @@ public class FindChips extends WsClientDB implements InterfaceWSInterrogeable, C
     protected int getNbThread() {
         return nbPoolsThreads;
     }
-    
 
+    @Override
+    public String getNameWS() {
+        return "FindChips";
+    }
+    
     /**
      * ***
      * Classe permettant d'executer une requête dans un thread

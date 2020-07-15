@@ -132,13 +132,19 @@ public class DigikeyOAuthApi extends DefaultApi20 {
         public Token getRenewToken(String accessToken, String refreshToken) {
 
             OAuthRequest request = new OAuthRequest(api.getAccessTokenVerb(), api.getAccessTokenEndpoint());
-            //
-            request.addBodyParameter(OAuthConstants.CLIENT_ID, config.getApiKey());
-            request.addBodyParameter(OAuthConstants.CLIENT_SECRET, config.getApiSecret());
+            
+            request.addBodyParameter("client_id", config.getApiKey());//OAuthConstants.CLIENT_ID
+            request.addBodyParameter("client_secret", config.getApiSecret());//OAuthConstants.CLIENT_SECRET
             request.addBodyParameter("refresh_token", refreshToken);
-            request.addBodyParameter(GRANT_TYPE, GRANT_TYPE_REFRESH_TOKEN);
+            request.addBodyParameter("grant_type", "refresh_token");
             //
             Response response = request.send();
+            System.out.println("CLIENT_ID = " + config.getApiKey());
+            System.out.println("CLIENT_SECRET = " + config.getApiSecret());
+            System.out.println("refresh token = " + refreshToken);
+            System.out.println("type =  " + "refresh_token");
+            
+            System.out.println("reponse refresh token = " + response.getBody());
             return api.getAccessTokenExtractor().extract(response.getBody());
             //
         }

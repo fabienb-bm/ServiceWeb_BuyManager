@@ -80,6 +80,10 @@ public class MyArrow extends WsClientDB implements InterfaceWSInterrogeable, Cal
     
     public String getDevise() {
         String myDevise = this.getMagasin();
+        if(myDevise.isEmpty())
+        {
+            myDevise = "EUR";
+        }
         return myDevise;
     }
         
@@ -96,12 +100,20 @@ public class MyArrow extends WsClientDB implements InterfaceWSInterrogeable, Cal
     {
         //Represents a mutable string
         StringBuilder sb2 = new StringBuilder();
-        
+        mySearch = mySearch.replaceAll("/","");
+        mySearch = mySearch.replaceAll(" ","");
+        //Version 1
         String search = "currency="+this.getDevise()+"&limit=1000000000&search="+mySearch.toLowerCase();
         
+        //Version 2
+        //String search = "currency="+this.getDevise()+"&limit=1000000000&search="+mySearch.toLowerCase()+"&version=2";
+        
         // Create url with current search => Currency, limit and part name
-        URL url2 = new URL("https://my.arrow.com/api/priceandavail/search?"+search);
-
+        //Version 1
+        URL url2 = new URL("https://my.arrow.com/api/priceandavail/parts?"+search+"&version=3"); 
+        
+        //Version 2
+        //URL url2 = new URL("https://my.arrow.com/api/priceandavail/parts?"+search);    
         // open connection
         HttpURLConnection urlConnGetData = (HttpURLConnection) url2.openConnection();
 
@@ -154,7 +166,7 @@ public class MyArrow extends WsClientDB implements InterfaceWSInterrogeable, Cal
             // Create url to create a authentification token
             URL url = new URL("https://my.arrow.com/api/security/oauth/token?grant_type=client_credentials"+this.getAuthentification());
             
-            System.out.println(url);
+            
             HttpURLConnection urlConnGetToken = (HttpURLConnection) url.openConnection();
             // Request curl 
             urlConnGetToken.setRequestProperty("X-Requested-With","Curl");
@@ -291,12 +303,18 @@ public class MyArrow extends WsClientDB implements InterfaceWSInterrogeable, Cal
                 }
                 if(objPrice.has("minOrderQuantity"))
                 {
-                    prixTab.setMoq(objPrice.getInt("minOrderQuantity"));
-                }
-                if(objPrice.has("supplier"))
-                {
-                    prixTab.setFournisseur(objPrice.getString("supplier"));
-                }            
+                    if(objpriceCurrent.has("minQuantity"))
+                    {
+                        if(parseInt(objpriceCurrent.getString("minQuantity")) > objPrice.getInt("minOrderQuantity"))
+                        {
+                            prixTab.setMoq(parseInt(objpriceCurrent.getString("minQuantity")));
+                        }
+                        else
+                        {
+                            prixTab.setMoq(objPrice.getInt("minOrderQuantity"));
+                        }
+                    }                  
+                }        
                 if(objPrice.has("pkg"))
                 {
                     prixTab.setPackaging(objPrice.getString("pkg"));
@@ -335,6 +353,7 @@ public class MyArrow extends WsClientDB implements InterfaceWSInterrogeable, Cal
                     prixTab.setMpq(objPrice.getInt("multOrderQuantity"));
                 }
                 
+                prixTab.setFournisseur("MyArrow");
                 prixListMyArrow.add(prixTab);
             }
             
@@ -440,7 +459,7 @@ public class MyArrow extends WsClientDB implements InterfaceWSInterrogeable, Cal
             // Catch response from Findchips API in JsonObject 
             JSONObject objProducts = new JSONObject(resultatJson);
             // Catch all the responses from the jsonobject structure in a JSONarray
-            JSONArray response = objProducts.getJSONArray("pricingResponse");  
+            JSONArray response = objProducts.getJSONArray("pricingResponse");      
             int StockTotalMPN = 0 ;
             String sRohs = "";
             Specs specs = null;
@@ -592,6 +611,11 @@ public class MyArrow extends WsClientDB implements InterfaceWSInterrogeable, Cal
     @Override
     protected int getNbThread() {
         return nbPoolsThreads;
+    }
+
+    @Override
+    public String getNameWS() {
+      return "MyArrow";
     }
     
 

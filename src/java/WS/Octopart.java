@@ -72,8 +72,6 @@ public class Octopart extends WsClientDB implements InterfaceWSInterrogeable, Ca
         if (mykey.isEmpty()) {
             mykey = octopartGenericKey;
         }
-        
-        System.out.println("OCOTPART KEY: "+mykey);
         return mykey;
     }
 
@@ -163,7 +161,7 @@ public class Octopart extends WsClientDB implements InterfaceWSInterrogeable, Ca
                 tailleMaxi = tailleTabMpn - j;
             }
             //
-            System.arraycopy(tabMpn.toArray(), j, tab, 0, tailleMaxi);
+            //System.arraycopy(tabMpn.toArray(), j, tab, 0, tailleMaxi);
             listeTabMpn.add(tab);
         }
         return listeTabMpn;
@@ -622,6 +620,11 @@ public class Octopart extends WsClientDB implements InterfaceWSInterrogeable, Ca
     @Override
     public boolean getErrorStatus() {
       return false;
+    }
+
+    @Override
+    public String getNameWS() {
+        return "Octopart";
     }
 
 }

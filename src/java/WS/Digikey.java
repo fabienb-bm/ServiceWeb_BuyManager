@@ -7,6 +7,7 @@ package WS;
 
 import DB.ConnexionDB;
 import DB.WsClientDB;
+import static DB.WsClientDB.digikeyWsId;
 import POJO.Datasheet;
 import POJO.Prix;
 import POJO.SearchResult;
@@ -58,19 +59,22 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
     /// private key : dhY77OJLpDLyywcX
     /// Client ID : 0JBmPbpn8GGFJRMkWkNc34iqMRiUzQyy
     // code ... IuQPaR46DnwpYMRdVcaRTAZkFOsncOypTBfUkQAD ???
-    /// OAuth Redirection URL :http://betaaccountRQT.buymanager.biz/
+    /// OAuth Redirection URL :https://accountRQT.buymanager.biz/
     //
    // '{"access_token":"lSuPLv7fOoMFSPI5EqXfToKdI8qA","refresh_token":"J5s4TUsKo7prwPwGN4TRQBSVob0FQgbW8xgTsbqJHl","token_type":"Bearer","expires_in":604799}
    // '{"access_token":"D8Gpvq2s9aSLXhE9NMwnlN7fOnXe","refresh_token":"v0C9CpHgsoMxI2UyGb6SqdKUDsJHSny0pb0JCYPmIG","token_type":"Bearer","expires_in":604799}
-  
+    
     // clef priver de l'application
     private static final String privateKey = "dhY77OJLpDLyywcX";
-    //
+    // clef privée de l'application buymanager test
+    //private static final String privateKey = "WLZfYbGyN2HIejtH";
     // identifinat du client chez digikey pour l'appli BM
     private static final String DigikeyClientID = "0JBmPbpn8GGFJRMkWkNc34iqMRiUzQyy";
+    // Product app test
+    //private static final String DigikeyClientID = "e5Pp02xsQBYSAl9v2BW7Z8E0RGCZReO8";
     //
     // redirection définie dans le service BM
-    private static final String oAuthRedirectionURL ="http://betaaccountRQT.buymanager.biz/oAuthLP.php";
+    private static final String oAuthRedirectionURL ="https://accountRQT.buymanager.biz/oAuthLP.php";
     //
     // token que j'ai recup la premiere fois (token du compte LME)
     private static final String access_tokenBM = "lSuPLv7fOoMFSPI5EqXfToKdI8qA";
@@ -197,7 +201,7 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
             this.RecuperationDesc(this.duplicateResults);
         }
         this.enregistreCredit(this.clientID, this.nbCredit);
-        System.out.println("Digikey terminé");
+        System.out.println("Digikey V3 terminé");
         return duplicateResults;
         //
     }
@@ -276,17 +280,18 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
         //
         try{
             Token accessToken = digiserv.getRenewToken(this.getKey(),this.getPassword());
-            //
+                        
             String sAccessToken = accessToken.getToken();
             String sRenewToken = accessToken.getSecret();
+
             if ( ! sAccessToken.isEmpty() && ! sRenewToken.isEmpty() ){
                 //
                 this.requeteSavePrivateKeyTOKEN(sAccessToken,sRenewToken,this.getClientId());
                 //
                 return sAccessToken;
                 //
-            }else{
-                return "";
+            }else{            
+               return "";
             }
         }catch(org.scribe.exceptions.OAuthException oathex){
             //
@@ -294,7 +299,7 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
             return "";
             //
         }
-        //
+
     }
     
     
@@ -387,7 +392,7 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
             return null;
         }else{
             //on recupére un String correspondant au JSON résultant de la requete     
-             String resultatJson = this.interroDigikey(descr,TEXTSEARCH);
+             String resultatJson = this.interroDigikey(descr,TEXTSEARCH,this.getKey());
             //
             // si le resultat n'est pas vide ou différents de -1 erreur de connexion
             if (!resultatJson.isEmpty() && !resultatJson.equals("-1") ) {
@@ -418,7 +423,7 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
             return null;
         }else{
             //on recupére un String correspondant au JSON résultant de la requete     
-             String resultatJson = this.interroDigikey(sku,SKUSEARCH);
+             String resultatJson = this.interroDigikey(sku,SKUSEARCH,this.getKey());
             //
             // si le resultat n'est pas vide ou différents de -1 erreur de connexion
             if (!resultatJson.isEmpty() && !resultatJson.equals("-1") ) {
@@ -450,8 +455,8 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
             return null;
         }else{
             //on recupére un String correspondant au JSON résultant de la requete     
-             String resultatJson = this.interroDigikey(mpn,MPNSEARCH);
-            //
+             String resultatJson = this.interroDigikey(mpn,MPNSEARCH,this.getKey());
+
             // si le resultat n'est pas vide ou différents de -1 erreur de connexion
             if (!resultatJson.isEmpty() && !resultatJson.equals("-1") ) {
                 ArrayList<Source> produits = this.JsonToArrSource(resultatJson, mpn);
@@ -474,9 +479,50 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
         return ! myKey.isEmpty();
     }
     
+    public String getStatusCodeMessage(int statusCode,String mpn,int mode)
+    {
+        String StatusMessageCode = "";
+        
+        switch(statusCode)
+        {
+            case 401:
+                    // token invalide
+                    // le risque c'est q'un bloc entier parte en cacahouette lors du premier renew...
+                    String newToken =  getRenewAccessToken();
+
+                    if ( ! newToken.isEmpty() ){
+                        // appel recursif si nouvel MPN
+                        // anien code
+                        //returnValue =  interroDigikey(mpn,mode);
+                        StatusMessageCode =  interroDigikey(mpn,mode,newToken);
+                    }else{
+                        // renvoie -1 erreur de connexion
+                        //Logger.getLogger(Digikey.class.getName()).log(Level.INFO,"Token renew error "+response.code()+ " : "+ response.body().string(),response);
+                        StatusMessageCode = "{ErrorStatus : 401 , ErrorMessage : Unauthorized !}";
+                    }       
+                        
+                    break;
+            case 400:
+                    StatusMessageCode = "{ERROR : 400 Bad request !}";
+                    break;
+            case 404:
+                    StatusMessageCode = "{ERROR : 404 Not found !}";
+                    break;
+            case 502:
+                    StatusMessageCode = "{ERROR : 502 Bad gateway ou proxy error}";
+                    break;
+            case 500:
+                    StatusMessageCode = "{ERROR : 500 Internal server error !}";
+                    break;
+            default:
+                    StatusMessageCode = "{ErrorStatus : jsonVide , ErrorMessage : products not found !}";
+                    break;
+        }
+        return StatusMessageCode ;
+    }
     
-    public String interroDigikey(String mpn, int mode ) {
-         
+    public String interroDigikey(String mpn, int mode, String accessToken ) {
+     
         // OkHttpClient from http://square.github.io/okhttp/
         // https://github.com/square/okhttp/wiki/HTTPS
         
@@ -493,11 +539,10 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
         Request request ;
         Request.Builder reqBuilder ;
         
-        String myKey =  this.getKey();
+        //String myKey =  accessToken; //this.getKey();
         String myLogin = this.getLogin();
         
         if ( mode == MPNSEARCH){
-          
             // BASIC API : Keyword Search pour récupérer l'ensemble des "Digikey reference" du MPN (1 référence par packaging)
             body = RequestBody.create(mediaType,"{ \"Keywords\": \""+mpn+"\",\n" +
                                                 "  \"RecordCount\": 30,\n" +
@@ -509,12 +554,12 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
                 .url("https://api.digikey.com/Search/v3/Products/Keyword")
                 .post(body)
                 .addHeader("X-DIGIKEY-Client-Id", DigikeyClientID)
-                .addHeader("Authorization","Bearer "+myKey)
+                .addHeader("Authorization","Bearer "+accessToken)
                 .addHeader("X-DIGIKEY-Locale-Site",this.getCountry())
                 .addHeader("X-DIGIKEY-Locale-Language",this.getCountry())
                 .addHeader("X-DIGIKEY-Locale-Currency",this.getDevise())
                 .addHeader("X-DIGIKEY-Locale-ShipToCountry",this.getShipToCountry());
-//            //
+
             if ( ! myLogin.isEmpty() ){        
                reqBuilder.addHeader("X-DIGIKEY-Customer-Id",myLogin);
             }
@@ -523,6 +568,8 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
 
         }else if (mode == SKUSEARCH){
 
+            mpn = mpn.replaceAll("#","%23");
+            mpn = mpn.replaceAll("/","%2F");
             //body = RequestBody.create(mediaType,"{\"Part\": \""+mpn+"\"}");
         // BASIC API
             reqBuilder = new Request.Builder()
@@ -532,23 +579,18 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
                 
                 //.addHeader("accept", "application/json")
                 .addHeader("X-DIGIKEY-Client-Id", DigikeyClientID)
-                .addHeader("Authorization","Bearer "+myKey)
+                .addHeader("Authorization","Bearer "+accessToken)
                 //.addHeader("content-type", "application/json")
                 .addHeader("X-DIGIKEY-Locale-Site",this.getCountry())
                 .addHeader("X-DIGIKEY-Locale-Language",this.getCountry())
                 .addHeader("X-DIGIKEY-Locale-Currency",this.getDevise())
                 .addHeader("X-DIGIKEY-Locale-ShipToCountry",this.getShipToCountry());
-                
-            
-            
+   
             //
             if ( ! myLogin.isEmpty() ){        
                reqBuilder.addHeader("X-DIGIKEY-Customer-Id",myLogin);
             }
-            //
-            
-            System.out.println("================================BUILDER=================================");
-            System.out.println(reqBuilder);
+
             request = reqBuilder.get().build();
         
         }else{ 
@@ -559,7 +601,7 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
                 .url("https://api.digikey.com/Search/v3/Products/Keyword")
                 .post(body)
                 .addHeader("accept", "application/json")
-                .addHeader("authorization","Bearer "+myKey)
+                .addHeader("authorization","Bearer "+accessToken)
                 .addHeader("x-ibm-client-id", DigikeyClientID)
                 .addHeader("content-type", "application/json")
                 .addHeader("X-DIGIKEY-Locale-Site",this.getCountry())
@@ -574,41 +616,14 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
             //
             request = reqBuilder.build();
         }
-
+        
         //
         try {
             Response response = client.newCall(request).execute();
-            System.out.println("================================RESPONSE=================================");
-            System.out.println(response);
             if ( response.isSuccessful() ) {
                 return response.body().string();             
             }else{
-                //
-                String returnValue = "";
-                switch (response.code() ) {
-                    case 401 :
-                        // token invalide
-                        // le risque c'est q'un bloc entier parte en cacahouette lors du premier renew...
-                        String newToken =  getRenewAccessToken();
-                        if ( ! newToken.isEmpty() ){
-                            // appel recursif si nouvel MPN
-                            returnValue =  interroDigikey(mpn,mode);
-                        }else{
-                            // renvoie -1 erreur de connexion
-                            Logger.getLogger(Digikey.class.getName()).log(Level.INFO,"Token renew error "+response.code()+ " : "+ response.body().string(),response);
-                            returnValue = "-1";
-                        }       
-                        break;
-                    case 404 :
-                        returnValue = "-1";
-                        break;
-                    case 400 :
-                        Logger.getLogger(Digikey.class.getName()).log(Level.INFO,"Erreur HTTP "+response.code()+ " : "+ response.body().string(),response);
-                        break;
-                    default :
-                        Logger.getLogger(Digikey.class.getName()).log(Level.WARNING,"Erreur HTTP "+response.code()+ " : "+ response.body().string(),response);
-                        break;
-                }
+                String returnValue = this.getStatusCodeMessage(response.code(), mpn, mode);
                 return returnValue;
             }
            
@@ -841,158 +856,188 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
                 //on recupere le JSON complet
                 JSONObject jsonObject = new JSONObject(resultatJson);
                 // On récupère le tableau d'objets spécifique à l'entrée "products"
-                JSONArray parts = jsonObject.getJSONArray("Products");
 
-                //Pour chacune des entrées de "products":
-                for (int i = 0; i < parts.length(); i++) {
-
-                    //on crée un objet de chaque "products"
-                    JSONObject objPart = parts.getJSONObject(i);
-
+                String  errorStatus = "";
+                String  errorMessage = "";
+                
+                if(jsonObject.has("ErrorStatus"))
+                {
+                    errorStatus = jsonObject.getString("ErrorStatus");
+                }
+                                
+                if(jsonObject.has("ErrorMessage"))
+                {
+                    errorMessage = jsonObject.getString("ErrorMessage");
+                }               
+                
+                if(errorStatus != "" && errorMessage != "")
+                {
                     //On crée un nouvel article pour chaque "products"
                     Source produit = new Source();
-
-                    produit.setMpn(objPart.getString("ManufacturerPartNumber"));
-                    produit.setNomProduit(objPart.getString("ProductDescription"));
-                    
-                    JSONObject objManufacturer = objPart.getJSONObject("Manufacturer");
-                    
-                    produit.setNomFabricant(objManufacturer.getString("Value"));
-                    produit.setUid(objPart.getString("DigiKeyPartNumber"));
+                    produit.setErrorStatus(errorStatus);
+                    produit.setErrorMessage(errorMessage);
                     produit.setOrigine("Digikey");
-                    produit.setUrlWs(objPart.getString("ProductUrl"));
-                    //
-                    produit.setStock(objPart.getInt("QuantityAvailable"));
                     
-                    //
-                    String packaging = "";
-                    // si on a un package type on le prend
-                    if (objPart.has("PackageType") ){
-                        packaging = objPart.getString("PackageType");
-                    }
-                    // si on a le packaging type c'est mieux
-                    if (objPart.has("Packaging") ){
-                        JSONObject myPackaging = objPart.getJSONObject("Packaging");
-                        packaging = myPackaging.getString("Value");
-                    }
-                    
-                    Integer leadweeksint = 0;
-                    if (objPart.has("ManufacturerLeadWeeks")){
-                        String strleadweeks = objPart.getString("ManufacturerLeadWeeks");
-                        String[] leadweeks = strleadweeks.split(" ");
-                        if (leadweeks.length > 0) {
-                            if (leadweeks[0].matches("[+-]?\\d*(\\.\\d+)?" )){
-                                if (leadweeks[0].length() > 0) {
-                                    leadweeksint = Integer.parseInt(leadweeks[0]);
+                    produits.add(produit);
+                }
+                else
+                {
+                    JSONArray parts = jsonObject.getJSONArray("Products");
+
+                    //Pour chacune des entrées de "products":
+                    for (int i = 0; i < parts.length(); i++) {
+
+                        //on crée un objet de chaque "products"
+                        JSONObject objPart = parts.getJSONObject(i);
+
+                        //On crée un nouvel article pour chaque "products"
+                        Source produit = new Source();
+                        errorStatus = "200";
+                        errorMessage = "Success !";
+                        produit.setErrorStatus(errorStatus);
+                        produit.setErrorMessage(errorMessage);
+                        produit.setMpn(objPart.getString("ManufacturerPartNumber"));
+                        produit.setNomProduit(objPart.getString("ProductDescription"));
+
+                        JSONObject objManufacturer = objPart.getJSONObject("Manufacturer");
+
+                        produit.setNomFabricant(objManufacturer.getString("Value"));
+                        produit.setUid(objPart.getString("DigiKeyPartNumber"));
+                        produit.setOrigine("Digikey");
+                        produit.setUrlWs(objPart.getString("ProductUrl"));
+                        //
+                        produit.setStock(objPart.getInt("QuantityAvailable"));
+
+                        //
+                        String packaging = "";
+                        // si on a un package type on le prend
+                        if (objPart.has("PackageType") ){
+                            packaging = objPart.getString("PackageType");
+                        }
+                        // si on a le packaging type c'est mieux
+                        if (objPart.has("Packaging") ){
+                            JSONObject myPackaging = objPart.getJSONObject("Packaging");
+                            packaging = myPackaging.getString("Value");
+                        }
+
+                        Integer leadweeksint = 0;
+                        if (objPart.has("ManufacturerLeadWeeks")){
+                            String strleadweeks = objPart.getString("ManufacturerLeadWeeks");
+                            String[] leadweeks = strleadweeks.split(" ");
+                            if (leadweeks.length > 0) {
+                                if (leadweeks[0].matches("[+-]?\\d*(\\.\\d+)?" )){
+                                    if (leadweeks[0].length() > 0) {
+                                        leadweeksint = Integer.parseInt(leadweeks[0]);
+                                    }
+                                }
+                            }                                
+                        }
+
+                        DateFormat df = new SimpleDateFormat("MM/dd/yyyy");
+                        Date today = Calendar.getInstance().getTime(); 
+                        String strLastUpdate =  df.format(today);
+
+                        //Création du tableau prixTab qui est un attribut de Source
+                        ArrayList<Prix> prixList = new ArrayList<Prix>();
+
+                        //
+                        if (objPart.has("StandardPricing") ) {
+                            JSONArray prices = objPart.getJSONArray("StandardPricing");
+                            //
+                            //                        
+                            for (int itPrices = 0; itPrices < prices.length(); itPrices++) {
+                                JSONObject objPrice = prices.getJSONObject(itPrices);
+                                //
+                                Prix myPrice = new Prix();
+                                myPrice.setMoq(objPrice.getInt("BreakQuantity"));
+                                myPrice.setQuantite(objPrice.getInt("BreakQuantity"));
+                                myPrice.setLeadDays(leadweeksint * 7);
+                                myPrice.setPrix(objPrice.getDouble("UnitPrice"));
+                                myPrice.setDevise(this.getDevise().toUpperCase());
+                                myPrice.setPackaging(packaging);
+                                myPrice.setFournisseur("Digikey (direct Public)");
+                                myPrice.setSku(objPart.getString("DigiKeyPartNumber")); 
+                                myPrice.setStock(objPart.getInt("QuantityAvailable"));
+                                myPrice.setStockRegions("");
+                                //myPrice.setLastUpdate(strLastUpdate);
+                                // on peut avoir des prix à 0 
+                                if (myPrice.getPrix() > 0 ) {
+                                    prixList.add(myPrice);
                                 }
                             }
-                        }                                
-                    }
-                    
-                    DateFormat df = new SimpleDateFormat("MM/dd/yyyy");
-                    Date today = Calendar.getInstance().getTime(); 
-                    String strLastUpdate =  df.format(today);
-                    
-                    //Création du tableau prixTab qui est un attribut de Source
-                    ArrayList<Prix> prixList = new ArrayList<Prix>();
-                    
-                    //
-                    if (optionPrix  && objPart.has("StandardPricing") ) {
-                        JSONArray prices = objPart.getJSONArray("StandardPricing");
-                        //
-                        //                        
-                        for (int itPrices = 0; itPrices < prices.length(); itPrices++) {
-                            JSONObject objPrice = prices.getJSONObject(itPrices);
-                            //
-                            Prix myPrice = new Prix();
-                            myPrice.setMoq(objPrice.getInt("BreakQuantity"));
-                            myPrice.setQuantite(objPrice.getInt("BreakQuantity"));
-                            myPrice.setLeadDays(leadweeksint * 7);
-                            myPrice.setPrix(objPrice.getDouble("UnitPrice"));
-                            myPrice.setDevise(this.getDevise().toUpperCase());
-                            myPrice.setPackaging(packaging);
-                            myPrice.setFournisseur("Digikey (direct Public)");
-                            myPrice.setSku(objPart.getString("DigiKeyPartNumber")); 
-                            myPrice.setStock(objPart.getInt("QuantityAvailable"));
-                            myPrice.setStockRegions("");
-                            //myPrice.setLastUpdate(strLastUpdate);
-                            // on peut avoir des prix à 0 
-                            if (myPrice.getPrix() > 0 ) {
-                                prixList.add(myPrice);
-                            }
+                            produit.setListePrix(prixList);
                         }
-                        produit.setListePrix(prixList);
-                    }
 
-                    if (optionSpec && objPart.has("Parameters") ) {
-                        JSONArray listSpec = objPart.getJSONArray("Parameters");
-                        ArrayList<Specs> specsItem = new ArrayList<Specs>();
-                        for (int itListSpec = 0; itListSpec < listSpec.length(); itListSpec++) {
-                            Specs uneSpec = new Specs();
-                            JSONObject uneSpecJson = listSpec.getJSONObject(itListSpec);
-                            //
-                            uneSpec.setKey(uneSpecJson.getString("Parameter").trim());
-                            uneSpec.setValue(uneSpecJson.getString("Value").trim());
-                            //
-                            specsItem.add(uneSpec);
-                        }
-                        //------------
-                        // autre infos 
-                        //------------
-                        if ( objPart.has("RoHSStatus")){
-                            Specs uneSpec = new Specs();
-                            uneSpec.setROHS(objPart.getString("RoHSStatus"));
-                            specsItem.add(uneSpec);
-                        }
-                        //
-                        String sCycle = "";
-                        if ( objPart.has("Obsolete")){
-                            boolean bObso = objPart.getBoolean("Obsolete");
-                            if (bObso ){
-                                sCycle = "Obsolete ";
+                        if (optionSpec && objPart.has("Parameters") ) {
+                            JSONArray listSpec = objPart.getJSONArray("Parameters");
+                            ArrayList<Specs> specsItem = new ArrayList<Specs>();
+                            for (int itListSpec = 0; itListSpec < listSpec.length(); itListSpec++) {
+                                Specs uneSpec = new Specs();
+                                JSONObject uneSpecJson = listSpec.getJSONObject(itListSpec);
+                                //
+                                uneSpec.setKey(uneSpecJson.getString("Parameter").trim());
+                                uneSpec.setValue(uneSpecJson.getString("Value").trim());
+                                //
+                                specsItem.add(uneSpec);
                             }
+                            //------------
+                            // autre infos 
+                            //------------
+                            if ( objPart.has("RoHSStatus")){
+                                Specs uneSpec = new Specs();
+                                uneSpec.setROHS(objPart.getString("RoHSStatus"));
+                                specsItem.add(uneSpec);
+                            }
+                            //
+                            String sCycle = "";
+                            if ( objPart.has("Obsolete")){
+                                boolean bObso = objPart.getBoolean("Obsolete");
+                                if (bObso ){
+                                    sCycle = "Obsolete ";
+                                }
+                            }
+                            if (objPart.has("ProductStatus") ){
+                                sCycle = sCycle.concat(objPart.getString("ProductStatus"));
+                            }
+
+                            if (sCycle.equals("") == false) {
+                                Specs uneSpec = new Specs();
+                                uneSpec.setLifeCycle(sCycle);
+                                specsItem.add(uneSpec);
+                            }
+                            //
+                            produit.setListeSpecs(specsItem);
                         }
-                        if (objPart.has("ProductStatus") ){
-                            sCycle = sCycle.concat(objPart.getString("ProductStatus"));
-                        }
-                        
-                        if (sCycle.equals("") == false) {
-                            Specs uneSpec = new Specs();
-                            uneSpec.setLifeCycle(sCycle);
-                            specsItem.add(uneSpec);
+
+                        if (optionDS && objPart.has("PrimaryDatasheet")) {
+
+                            String myDataSheetString = "";
+                            ArrayList<Datasheet> datasheet = new ArrayList<Datasheet>();
+
+                            try{
+                                //
+                                // test en mode chaine
+                                myDataSheetString = objPart.getString("PrimaryDatasheet");
+                            } catch (JSONException ex) {
+                                //
+                                // inon on teste en mode Object
+                                JSONObject myDataSheet = objPart.getJSONObject("PrimaryDatasheet");
+                                myDataSheetString = myDataSheet.getString("urlField");
+                                //
+                            }
+
+                            // une seule datasheet !!!!
+                            Datasheet ds = new Datasheet();
+                            ds.setUrl(myDataSheetString);
+                            datasheet.add(ds);
+                            //
+                            produit.setDatasheet(datasheet);
                         }
                         //
-                        produit.setListeSpecs(specsItem);
+                        produit.setRangOrigine(i + 1);
+                        // On ajoute le produit à la liste
+                        produits.add(produit);
                     }
-                    
-                    if (optionDS && objPart.has("PrimaryDatasheet")) {
-                        
-                        String myDataSheetString = "";
-                        ArrayList<Datasheet> datasheet = new ArrayList<Datasheet>();
-                        
-                        try{
-                            //
-                            // test en mode chaine
-                            myDataSheetString = objPart.getString("PrimaryDatasheet");
-                        } catch (JSONException ex) {
-                            //
-                            // inon on teste en mode Object
-                            JSONObject myDataSheet = objPart.getJSONObject("PrimaryDatasheet");
-                            myDataSheetString = myDataSheet.getString("urlField");
-                            //
-                        }
-                        
-                        // une seule datasheet !!!!
-                        Datasheet ds = new Datasheet();
-                        ds.setUrl(myDataSheetString);
-                        datasheet.add(ds);
-                        //
-                        produit.setDatasheet(datasheet);
-                    }
-                    //
-                    produit.setRangOrigine(i + 1);
-                    // On ajoute le produit à la liste
-                    produits.add(produit);
                 }
             } catch (JSONException ex) {
                 Logger.getLogger(Digikey.class.getName()).log(Level.SEVERE, null, ex);
@@ -1036,14 +1081,19 @@ public class Digikey extends WsClientDB implements InterfaceWSInterrogeable, Cal
     
     @Override
     public boolean getErrorStatus() {
-       //
        // on renouvelle le token d'acces pour savoir si le service est OK
        // un peu
-       String resultatJson = this.interroDigikey("bav99",MPNSEARCH);
+       String resultatJson = this.interroDigikey("bav99",MPNSEARCH,this.getKey());
        //
        // -1 erreur de connexion ou de clef 
        return resultatJson.equals("-1");
        //
+    }
+    
+    @Override
+    public String getNameWS()
+    {
+        return "Digikey";
     }
     
 }

@@ -144,7 +144,7 @@ public class Mouser extends WsClientDB implements InterfaceWSInterrogeable, Call
                     .post(body)
                     .addHeader("content-type", "application/soap+xml")
                     .build();
-
+                
                 try {
                     Response response = client.newCall(request).execute();
                     if ( response.isSuccessful() ) {
@@ -423,8 +423,12 @@ public class Mouser extends WsClientDB implements InterfaceWSInterrogeable, Call
       return false;
     }
 
-  
+    @Override
+    public String getNameWS() {
+        return "Mouser";
+    }
 
+  
     /**
      * ***
      * Classe permettant d'executer une requête dans un thread

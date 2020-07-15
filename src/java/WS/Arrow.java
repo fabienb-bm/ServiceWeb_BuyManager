@@ -505,6 +505,11 @@ public class Arrow extends WsClientDB implements InterfaceWSInterrogeable, Calla
     protected int getNbThread() {
         return nbPoolsThreads;
     }
+
+    @Override
+    public String getNameWS() {
+       return "Arrow";
+    }
     
 
     /**

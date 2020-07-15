@@ -127,12 +127,7 @@ public class Farnell extends WsClientDB implements InterfaceWSInterrogeable, Cal
      */
     @Override
     public String getKey() {
-        String mykey = ""; //To change body of generated methods, choose Tools | Templates.
-        if(!super.getKey().toString().isEmpty())
-        {
-            byte[] decodePassword =  Base64.decodeBase64(super.getKey().toString());
-            mykey = new String(decodePassword);
-        }
+        String mykey = super.getKey(); //To change body of generated methods, choose Tools | Templates.
         if (mykey.isEmpty()) {
             mykey = rsFarnellKey;
         }
@@ -178,13 +173,13 @@ public class Farnell extends WsClientDB implements InterfaceWSInterrogeable, Cal
                     .queryParam("resultsSettings.numberOfResults", "10")
                     .queryParam("resultsSettings.responseGroup", "large")
                     .queryParam("callInfo.responseDataFormat", "JSON")
-                    .queryParam("callInfo.apiKey", this.getKey())
+                    .queryParam("callInfo.apiKey", rsFarnellKey)
                     .property(ClientProperties.READ_TIMEOUT,20000)     // timeOUT à 20 s comme pour RS  pour les jour ou ca rame
                     .property(ClientProperties.CONNECT_TIMEOUT,20000);
-
         } else {
 
             String customerId = this.getLogin();
+            String key = this.getKey();
             String timestampFarnell = Farnell.getFarnellTimeStamp();
             String functionFarnell = myFunction;
             String signatureFarnell = Farnell.getFarnellSignature(timestampFarnell, functionFarnell, this.getPassword());
@@ -193,12 +188,16 @@ public class Farnell extends WsClientDB implements InterfaceWSInterrogeable, Cal
             webTarget = client.target("https://api.element14.com/catalog/")
                     .path("/products")
                     .queryParam("term", mySearch)
-                    .queryParam("storeInfo.id", this.getMagasin())
+                    .queryParam("storeInfo.id",this.getMagasin())
                     .queryParam("resultsSettings.offset", "0")
                     .queryParam("resultsSettings.numberOfResults", "10")
+                    //callInfo.omitXmlSchema
                     .queryParam("resultsSettings.responseGroup", "large")
+                    .queryParam("callInfo.omitXmlSchema", "false")
                     .queryParam("callInfo.responseDataFormat", "JSON")
-                    .queryParam("callInfo.apiKey", this.getKey())
+                    .queryParam("callInfo.apiKey", rsFarnellKey)
+                    //.queryParam("userInfo.customerId", customerId)//)
+                    //.queryParam("userInfo.timestamp", timestampFarnell)
                     .queryParam("userInfo.signature", signatureFarnell)     //SyST1ecHStE
                     .queryParam("userInfo.timestamp", timestampFarnell)
                     .queryParam("userInfo.customerId", customerId)          // 34768324
@@ -212,7 +211,6 @@ public class Farnell extends WsClientDB implements InterfaceWSInterrogeable, Cal
             Response rep = invocationBuilder.get(Response.class);
             if (rep.getStatus() == 200) {
                 String reponse = rep.readEntity(String.class);
-                //System.out.println(reponse);
                 return reponse;
             }else{
                 Logger.getLogger(ServiceResource.class.getName()).log(Level.WARNING,String.valueOf( rep.getStatus()));
@@ -419,6 +417,8 @@ public class Farnell extends WsClientDB implements InterfaceWSInterrogeable, Cal
                 }
 
                 // On récupère le tableau d'objets spécifique à l'entrée "products"
+                
+                
                 JSONArray products = objManu.getJSONArray("products");
 
                 //Pour chacune des entrées de "products":
@@ -563,6 +563,11 @@ public class Farnell extends WsClientDB implements InterfaceWSInterrogeable, Cal
     @Override
     protected int getNbThread() {
         return nbPoolsThreads;
+    }
+
+    @Override
+    public String getNameWS() {
+        return "Farnell";
     }
     
 
